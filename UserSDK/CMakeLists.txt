@@ -4,9 +4,12 @@ project(ExRobotSDK)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-file(GLOB_RECURSE Sources algorithm/*.cpp bsp/*.cpp component/*.cpp driver/*.cpp)
+file(GLOB_RECURSE Sources algorithm/*.cpp bsp/*.cpp component/*.cpp driver/*.cpp empty.cpp)
+list(FILTER Sources EXCLUDE REGEX ".*/tests/.*")
 
 add_library(ExRobotSDK ${Sources})
 
 target_include_directories(ExRobotSDK PUBLIC algorithm bsp component driver)
+
+add_subdirectory(tests)
 

@@ -15,276 +15,149 @@
 #include "Format.h"
 
 namespace EP::Math {
+
+/**
+ * @brief A fixed-size matrix class template leveraging specific math platforms.
+ * @tparam ROWS Number of rows
+ * @tparam COLS Number of columns
+ * @tparam pl Underlying math platform implementation (defaults to DefaultMathPl)
+ */
 template<uint32_t ROWS, uint32_t COLS, mathPl pl = DefaultMathPl>
 class Matrix : private pl {
 public:
+    using BackendPl = pl;
+
+    // --- Compile-time Traits ---
     consteval static bool is_point() { return (ROWS == 1 && COLS == 1); }
-
     consteval static bool is_row() { return (COLS != 1 && ROWS == 1); }
-
     consteval static bool is_col() { return (COLS == 1 && ROWS != 1); }
-
     consteval static bool is_vec() { return ((COLS == 1 && ROWS != 1) || (COLS != 1 && ROWS == 1)); }
-
     consteval static bool is_square() { return COLS == ROWS; }
 
     template<uint32_t R, uint32_t C, mathPl P>
     friend class Matrix;
 
 public:
-    constexpr static Matrix zeros() noexcept {
-        Matrix result{};
-        // memset(result.data, 0, ROWS * COLS * sizeof(float));
-        for (int i = 0; i < ROWS; ++i) {
-            for (int j = 0; j < COLS; ++j) {
-                result.data[i][j] = 0;
-            }
-        }
-        return Matrix{};
-    }
+    // --- Static Factories ---
+    /** @brief Creates a matrix filled with zeros */
+    constexpr static Matrix zeros() noexcept;
+    /** @brief Creates an identity matrix */
+    constexpr static Matrix eyes() noexcept;
 
-    constexpr static Matrix eyes() noexcept {
-        Matrix result;
-        for (int i = 0; i < ROWS; ++i) {
-            for (int j = 0; j < COLS; ++j) {
-                if (i == j)
-                    result.data[i][j] = 1;
-                else
-                    result.data[i][j] = 0;
-            }
-        }
-        return result;
-    }
-
-    // normal matrix
 public:
-    constexpr Matrix() noexcept {
-        pl::matrix_init(&matrix, ROWS, COLS, reinterpret_cast<float32_t *>(data));
-    }
-
-    // copy constructor
-    constexpr Matrix(const Matrix &other) noexcept : Matrix() {
-        memcpy(data, other.data, ROWS * COLS * sizeof(float));
-    }
-
-    // copy assignment
-    constexpr Matrix &operator=(const Matrix &other) noexcept {
-        if (&other == this) { return *this; }
-        pl::matrix_init(&matrix, ROWS, COLS, reinterpret_cast<float32_t *>(data));
-        memcpy(data, other.data, ROWS * COLS * sizeof(float));
-        return *this;
-    }
-
-    // move constructor
+    // --- Constructors & Assignment ---
+    constexpr Matrix() noexcept;
+    constexpr Matrix(const Matrix &other) noexcept;
+    constexpr Matrix &operator=(const Matrix &other) noexcept;
     constexpr Matrix(Matrix &&other) = default;
-
-    // move assignment
     constexpr Matrix &operator=(Matrix &&other) = default;
-
     ~Matrix() = default;
 
-    constexpr explicit Matrix(const float (&arr)[ROWS][COLS]) noexcept : Matrix() {
-        memcpy(this->data, arr, ROWS * COLS * sizeof(float));
-    }
+    /** @brief Constructs from a 2D C-style array */
+    constexpr explicit Matrix(const float (&arr)[ROWS][COLS]) noexcept;
+    constexpr Matrix &operator=(const float (&arr)[ROWS][COLS]) noexcept;
 
-    constexpr Matrix &operator=(const float (&arr)[ROWS][COLS]) noexcept {
-        pl::matrix_init(&matrix, ROWS, COLS, reinterpret_cast<float32_t *>(data));
-        memcpy(data, arr, ROWS * COLS * sizeof(float));
-        return *this;
-    }
+    Matrix &operator=(std::nullptr_t) noexcept;
+    constexpr bool operator==(std::nullptr_t) noexcept;
+    constexpr bool operator!=(std::nullptr_t) noexcept;
 
-    // 重载赋值运算符处理nullptr
-    explicit Matrix(std::nullptr_t) noexcept { matrix.pData = nullptr; }
+    // --- Dimension Accessors ---
+    consteval uint32_t getRow() { return ROWS; }
+    consteval uint32_t getCol() { return COLS; }
 
-    Matrix &operator=(std::nullptr_t) noexcept {
-        matrix.pData = nullptr;
-        return *this;
-    }
+    // --- Element Access ---
+    /** @brief 2D index accessor (0-based) */
+    float &operator()(const uint32_t row, const uint32_t col) noexcept;
+    constexpr float operator()(const uint32_t row, const uint32_t col) const noexcept;
 
-    constexpr bool operator==(std::nullptr_t) noexcept { return matrix.pData == nullptr; }
-    constexpr bool operator!=(std::nullptr_t) noexcept { return matrix.pData != nullptr; }
+    // --- Basic Arithmetic Operators ---
+    constexpr Matrix operator+(const Matrix &other) const noexcept;
+    constexpr Matrix operator-(const Matrix &other) const noexcept;
 
-    consteval uint32_t get_row() { return ROWS; }
-
-    consteval uint32_t get_col() { return COLS; }
-
-    float &operator()(const uint32_t row, const uint32_t col) noexcept { return data[row][col]; }
-
-    constexpr float operator()(const uint32_t row, const uint32_t col) const noexcept { return data[row][col]; }
-
-    constexpr Matrix operator+(const Matrix &other) const noexcept {
-        Matrix result;
-        pl::matrix_add(&matrix, &other.matrix, &result.matrix);
-        return result;
-    }
-
-    constexpr Matrix operator-(const Matrix &other) const noexcept {
-        Matrix result;
-        pl::matrix_sub(&matrix, &other.matrix, &result.matrix);
-        return result;
-    }
-
+    /** @brief Matrix multiplication */
     template<uint32_t cols>
-    constexpr Matrix<ROWS, cols> operator*(const Matrix<COLS, cols> &other) const noexcept {
-        Matrix<ROWS, cols> result;
-        pl::matrix_mul(&matrix, &other.matrix, &result.matrix);
-        return result;
-    }
+    constexpr Matrix<ROWS, cols> operator*(const Matrix<COLS, cols> &other) const noexcept;
 
-    constexpr Matrix operator*(float scale) const noexcept {
-        Matrix result;
-        pl::matrix_scale(&matrix, scale, &result.matrix);
-        return result;
-    }
-
+    // --- Scalar Arithmetic Operators ---
+    constexpr Matrix operator*(float scale) const noexcept;
     constexpr friend Matrix<ROWS, COLS> operator*(float scale, const Matrix<ROWS, COLS> &other) noexcept {
         Matrix result;
         pl::matrix_scale(&other.matrix, scale, &result.matrix);
         return result;
     }
+    constexpr Matrix operator/(const float scale) const noexcept;
 
-    constexpr Matrix operator/(const float scale) const noexcept {
-        Matrix result;
-        pl::matrix_scale(&matrix, 1.0f / scale, &result.matrix);
-        return result;
-    }
+    // --- Advanced Operations ---
+    /** @brief Returns the transposed matrix */
+    [[nodiscard]] constexpr Matrix<COLS, ROWS> transpose() const noexcept;
+    constexpr void transpose(Matrix<COLS, ROWS> &mat) const;
+    /** @brief Operator shorthand for transpose */
+    constexpr Matrix<COLS, ROWS> operator~() const noexcept;
 
-    [[nodiscard]] constexpr Matrix<COLS, ROWS> transpose() const noexcept {
-        Matrix<COLS, ROWS> result;
-        pl::matrix_trans(&matrix, &result.matrix);
-        return result;
-    }
+    constexpr Matrix operator-() const noexcept;
 
-    constexpr void transpose(Matrix<COLS, ROWS> &mat) const {
-        pl::matrix_trans(&matrix, &mat.matrix);
-    }
+    void operator+=(const Matrix &other) noexcept;
+    void operator-=(const Matrix &other) noexcept;
+    void operator*=(const Matrix<COLS, COLS> &other) noexcept;
+    void operator*=(float scale) noexcept;
+    void operator/=(float scale) noexcept;
 
-    constexpr Matrix<COLS, ROWS> operator~() const noexcept { return transpose(); }
-
-    constexpr Matrix operator-() const noexcept { return *this * -1.0f; }
-
-    void operator+=(const Matrix &other) noexcept {
-        pl::matrix_add(&matrix, &other.matrix, &matrix);
-    }
-
-    void operator-=(const Matrix &other) noexcept {
-        pl::matrix_sub(&matrix, &other.matrix, &matrix);
-    }
-
-    void operator*=(const Matrix<COLS, COLS> &other) noexcept {
-        auto result = *this * other;
-        *this = result;
-        // pl::matrix_mul(&matrix, &other.matrix, &matrix);
-    }
-
-    void operator*=(float scale) noexcept {
-        pl::matrix_scale(&matrix, scale, &matrix);
-    }
-
-    void operator/=(float scale) noexcept {
-        pl::matrix_scale(&matrix, 1.0f / scale, &matrix);
-    }
-
+    /** @brief Calculates the inverse matrix, sets status */
     pl::status inv(Matrix &result) noexcept requires(is_square());
-
+    /** @brief Returns the inverse matrix (or zeros if singular) */
     Matrix inv() noexcept requires(is_square());
 
+    // --- In-Place Operations ---
     template<uint32_t common>
-    void assign_multiply(const Matrix<ROWS, common> &first_matrix, const Matrix<common, COLS> &second_matrix) noexcept;
+    void assignMultiply(const Matrix<ROWS, common> &first_matrix, const Matrix<common, COLS> &second_matrix) noexcept;
+    void assignAdd(const Matrix &first_matrix, const Matrix &second_matrix) noexcept;
+    void assignSub(const Matrix &first_matrix, const Matrix &second_matrix) noexcept;
+    void assignScale(float scale) noexcept;
+    pl::status assignInv(Matrix &scr_matrix) noexcept requires(is_square());
 
-    void assign_add(const Matrix &first_matrix, const Matrix &second_matrix) noexcept;
-
-    void assign_sub(const Matrix &first_matrix, const Matrix &second_matrix) noexcept;
-
-    void assign_scale(float scale) noexcept;
-
-    pl::status assign_inv(Matrix &scr_matrix) noexcept requires(is_square());
-
-    // vec
 public:
-    [[nodiscard]] float norm() const noexcept requires(is_vec()) {
-        if constexpr (ROWS == 1) {
-            return pl::sqrtf((*this * this->transpose())[0]);
-        } else {
-            return pl::sqrtf((this->transpose() * *this)[0]);
-        }
-    };
+    // --- Vector Specific Operations ---
+    /** @brief Calculates the L2 norm (magnitude) of the vector */
+    [[nodiscard]] float norm() const noexcept requires(is_vec());
 
-    [[nodiscard]] Matrix normalized() const noexcept requires(is_vec()) { return (*this / norm()); };
+    /** @brief Returns a normalized copy of the vector */
+    [[nodiscard]] Matrix normalized() const noexcept requires(is_vec());
 
-    /**
-     * @brief 向量差乘 vector cross
-     * @param other 另外一个向量 the other vector
-     * @return Matrix 相同维度的向量 vector of the same dimension
-     */
-    Matrix operator^(const Matrix &other) const noexcept requires(is_vec() && (ROWS == 3 || COLS == 3)) {
-        Matrix result;
-        const auto &result_array = reinterpret_cast<float *>(result.data);
-        const auto &other_array = reinterpret_cast<const float *>(other.data);
-        const auto &array = reinterpret_cast<const float *>(data);
-        result_array[0] = array[1] * other_array[2] - array[2] * other_array[1];
-        result_array[1] = array[2] * other_array[0] - array[0] * other_array[2];
-        result_array[2] = array[0] * other_array[1] - array[1] * other_array[0];
-        return result;
-    }
+    /** @brief Vector cross product */
+    Matrix operator^(const Matrix &other) const noexcept requires(is_vec() && (ROWS == 3 || COLS == 3));
 
-    // point
-    explicit Matrix(float other) noexcept requires(is_point()) : Matrix() { data[0][0] = other; };
+    /** @brief Point specific constructor */
+    explicit Matrix(float other) noexcept requires(is_point());
 
-    // colVec
 public:
-    constexpr explicit Matrix(const float (&arr)[ROWS]) noexcept requires(is_col()) : Matrix() {
-        memcpy(this->data, arr, ROWS * sizeof(float));
-    }
+    // --- Column Vector Operations ---
+    constexpr explicit Matrix(const float (&arr)[ROWS]) noexcept requires(is_col());
+    constexpr explicit Matrix(const std::array<float, ROWS> &arr) noexcept requires(is_col());
 
-    constexpr explicit Matrix(const std::array<float, ROWS> &arr) noexcept requires(is_col()) : Matrix() {
-        memcpy(this->data, arr.data(), COLS * sizeof(float));
-    }
+    /** @brief Vector dot product */
+    constexpr float operator*(const Matrix &other) const noexcept requires(is_col());
 
-    constexpr float operator*(const Matrix &other) const noexcept requires(is_col()) {
-        Matrix<1, 1> result;
-        Matrix<1, ROWS> tmp = this->transpose();
-        pl::matrix_mul(&tmp.matrix, &other.matrix, &result.matrix);
-        return result[0];
-    }
+    /** @brief 1D index accessor */
+    float &operator[](uint32_t num) noexcept requires(is_col());
+    constexpr float operator[](uint32_t num) const noexcept requires(is_col());
+    float &operator()(uint32_t num) noexcept requires(is_col());
+    constexpr float operator()(uint32_t num) const noexcept requires(is_col());
 
-    float &operator[](uint32_t num) noexcept requires(is_col()) { return this->data[num][0]; };
-
-    constexpr float operator[](uint32_t num) const noexcept requires(is_col()) { return this->data[num][0]; };
-
-    float &operator()(uint32_t num) noexcept requires(is_col()) { return this->data[num][0]; };
-
-    constexpr float operator()(uint32_t num) const noexcept requires(is_col()) { return this->data[num][0]; };
-
-    // rowVec
 public:
-    constexpr explicit Matrix(const float (&arr)[COLS]) noexcept requires(is_row()) : Matrix() {
-        memcpy(this->data, arr, COLS * sizeof(float));
-    }
+    // --- Row Vector Operations ---
+    constexpr explicit Matrix(const float (&arr)[COLS]) noexcept requires(is_row());
+    constexpr explicit Matrix(const std::array<float, COLS> &arr) noexcept requires(is_row());
 
-    constexpr explicit Matrix(const std::array<float, COLS> &arr) noexcept requires(is_row()) : Matrix() {
-        memcpy(this->data, arr.data(), COLS * sizeof(float));
-    }
+    /** @brief Vector dot product */
+    constexpr float operator*(const Matrix &other) const noexcept requires(is_row());
 
-    constexpr float operator*(const Matrix &other) const noexcept requires(is_row()) {
-        Matrix<1, 1> result;
-        Matrix<COLS, 1> tmp = other.transpose();
-        pl::matrix_mul(&matrix, &tmp.matrix, &result.matrix);
-        return result(1, 1);
-    }
+    /** @brief 1D index accessor */
+    float &operator[](uint32_t num) noexcept requires(is_row() || is_point());
+    constexpr float operator[](uint32_t num) const noexcept requires(is_row() || is_point());
+    float &operator()(uint32_t num) noexcept requires(is_row() || is_point());
+    constexpr float operator()(uint32_t num) const noexcept requires(is_row() || is_point());
 
-    float &operator[](uint32_t num) noexcept requires(is_row() || is_point()) { return this->data[0][num]; };
-
-    constexpr float operator[](uint32_t num) const noexcept requires(is_row() || is_point()) {
-        return this->data[0][num];
-    };
-
-    float &operator()(uint32_t num) noexcept requires(is_row() || is_point()) { return this->data[0][num]; };
-
-    constexpr float operator()(uint32_t num) const noexcept requires(is_row() || is_point()) {
-        return this->data[0][num];
-    };
-
+    // --- Formatting ---
     template<typename OStream>
     friend OStream &operator<<(OStream &os, const Matrix &mat) {
         os << "\n[";
@@ -309,54 +182,14 @@ private:
     pl::MatrixView matrix{};
 };
 
-template<uint32_t ROWS, uint32_t COLS, mathPl pl>
-pl::status Matrix<ROWS, COLS, pl>::assign_inv(Matrix &scr_matrix) noexcept requires(is_square()) {
-    typename pl::status ret = pl::matrix_inverse(&scr_matrix.matrix, &matrix);
-    return ret;
-}
-
-template<uint32_t ROWS, uint32_t COLS, mathPl pl>
-void Matrix<ROWS, COLS, pl>::assign_scale(float scale) noexcept {
-    pl::matrix_scale(&matrix, scale, &matrix);
-}
-
-template<uint32_t ROWS, uint32_t COLS, mathPl pl>
-void Matrix<ROWS, COLS, pl>::assign_sub(const Matrix &first_matrix, const Matrix &second_matrix) noexcept {
-    pl::matrix_sub(&first_matrix.matrix, &second_matrix.matrix, &matrix);
-}
-
-template<uint32_t ROWS, uint32_t COLS, mathPl pl>
-void Matrix<ROWS, COLS, pl>::assign_add(const Matrix &first_matrix, const Matrix &second_matrix) noexcept {
-    pl::matrix_add(&first_matrix.matrix, &second_matrix.matrix, &matrix);
-}
-
-template<uint32_t ROWS, uint32_t COLS, mathPl pl>
-template<uint32_t common>
-void Matrix<ROWS, COLS, pl>::assign_multiply(const Matrix<ROWS, common> &first_matrix,
-                                             const Matrix<common, COLS> &second_matrix) noexcept {
-    pl::matrix_mul(&first_matrix.matrix, &second_matrix.matrix, &matrix);
-}
-
-template<uint32_t ROWS, uint32_t COLS, mathPl pl>
-inline pl::status Matrix<ROWS, COLS, pl>::inv(Matrix &result) noexcept requires(is_square()) {
-    Matrix matrix_bak = *this;
-    typename pl::status ret = pl::matrix_inv(&matrix_bak.matrix, &result.matrix);
-    return ret;
-}
-
-template<uint32_t ROWS, uint32_t COLS, mathPl pl>
-inline Matrix<ROWS, COLS, pl> Matrix<ROWS, COLS, pl>::inv() noexcept requires(is_square()) {
-    Matrix result;
-    Matrix matrix_bak = *this;
-    typename pl::status ret = pl::matrix_inverse(&matrix_bak.matrix, &result.matrix);
-    return ret == pl::status::SUCCESS ? result : zeros();
-}
-
+/** @brief Column vector alias */
 template<uint32_t ROWS, mathPl pl = DefaultMathPl>
 using ColVec = Matrix<ROWS, 1, pl>;
 
+/** @brief Row vector alias */
 template<uint32_t COLS, mathPl pl = DefaultMathPl>
 using RowVec = Matrix<1, COLS, pl>;
+
 }
 
 namespace EP::Component {
@@ -380,3 +213,5 @@ struct fmtter<Math::Matrix<ROWS, COLS, pl> > {
     }
 };
 }
+
+#include "Matrix.tpp"
