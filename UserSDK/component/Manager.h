@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cstdint>
+#include <limits>
 namespace EP::Component {
 template<typename T, typename indexType = std::size_t>
 struct combo {

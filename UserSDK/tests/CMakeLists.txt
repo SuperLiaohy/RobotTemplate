@@ -9,3 +9,4 @@ FetchContent_MakeAvailable(googletest)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../algorithm/Matrix/tests ${CMAKE_CURRENT_BINARY_DIR}/MatrixTests)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../algorithm/Quaternion/tests ${CMAKE_CURRENT_BINARY_DIR}/QuaternionTests)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../component/tests ${CMAKE_CURRENT_BINARY_DIR}/ComponentTests)

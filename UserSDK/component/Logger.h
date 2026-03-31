@@ -17,8 +17,13 @@ public:
 
     template<String auto fmt, typename... Args>
     void log(Args &&... args) {
-        using Indices = std::make_index_sequence<sizeof...(Args)>;
-        mLen += for_each_impl<fmt, Indices>::execute(buffer + mLen, std::forward<Args>(args)...);
+        if constexpr (sizeof...(Args) > 0) {
+            using Indices = std::make_index_sequence<sizeof...(Args)>;
+            mLen += for_each_impl<fmt, Indices>::execute(buffer + mLen, std::forward<Args>(args)...);
+        } else {
+            memcpy(buffer + mLen, fmt.c_str(), fmt.len());
+            mLen += fmt.len();
+        }
     }
 
     void log(const char *msg, uint32_t len) {

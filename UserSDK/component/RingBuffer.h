@@ -109,7 +109,7 @@ public:
             if (available() < len)
                 Handle::read_handle = (Handle::read_handle + len - available()) % capacity();
             const std::size_t first_chunk = std::min(capacity() - Handle::write_handle, len);
-            std::memcpy(&buffer[Handle::write_handle & mask()], data, first_chunk * sizeof(T));
+            std::memcpy(&buffer[Handle::write_handle], data, first_chunk * sizeof(T));
             if (len - first_chunk > 0)
                 std::memcpy(&buffer[0], data + first_chunk, (len - first_chunk) * sizeof(T));
             Handle::write_handle = (Handle::write_handle + len) % capacity();

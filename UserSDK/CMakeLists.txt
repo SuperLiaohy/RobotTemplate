@@ -11,5 +11,6 @@ add_library(ExRobotSDK ${Sources})
 
 target_include_directories(ExRobotSDK PUBLIC algorithm bsp component driver)
 
-add_subdirectory(tests)
-
+if(NOT CMAKE_CROSSCOMPILING)
+    add_subdirectory(tests)
+endif()
