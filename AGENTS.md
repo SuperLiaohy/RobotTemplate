@@ -74,3 +74,9 @@ cmake -B WorkSpace/Stm32Demo/build -S WorkSpace/Stm32Demo -DCMAKE_TOOLCHAIN_FILE
 # Build STM32H7 demo
 cmake --build WorkSpace/Stm32Demo/build -j$(nproc)
 ```
+
+### hw-debug Skill Constraints
+
+- Python library `pyserial` is required to run the serial logger (`pip install pyserial`).
+- When scanning for USB serial devices (`ttyACM*` or `ttyUSB*`), CMSIS-DAP/ST-Link often registers multiple ports (for example, `ttyACM0` for debugger and `ttyACM1` for Virtual COM Port). Agents should carefully select the Virtual COM Port (VCP) by inspecting `lsusb` output and the ports available.
+- Proper teardown is essential. OpenOCD and Serial Logger should be killed using their PIDs (`kill -9 $PID`) to prevent dangling processes.
