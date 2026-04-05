@@ -55,6 +55,22 @@ cd build && ctest -R "AlgorithmTest" -V
 ## 5. Agent Workflow Mandates
 
 1. **Verify Compilation**: Always run `cmake --build build` after generating or modifying `.cpp`/`.hpp` files to ensure zero compilation errors and zero warnings.
-2. **Path Context**: Always use absolute paths starting from the workspace root (`/home/liaohy/User/Code/CLion/RobotTemplate/`).
+2. **Path Context**: Always use workspace-root-relative paths (for example, `WorkSpace/Stm32Demo/` from the repository root).
 3. **PC Testability: When writing new logic for `algorithm` or `component`, immediately write a corresponding GTest case in the UserSDK/tests/ directory and verify it passes locally. No test cases are required for code in `bsp` and `driver`.
 4. **Hardware Separation**: Never mix MCU-specific register code or vendor HAL inside `algorithm` or `component`. Hardware specifics belong strictly in `bsp` and occasionally `driver`.
+
+## 6. STM32H7 Demo Project (WorkSpace/Stm32Demo)
+
+`WorkSpace/Stm32Demo` is an STM32H7 project.
+
+- **Toolchain file (required for configure/build)**: `WorkSpace/Stm32Demo/cmake/starm-clang.cmake`
+- **Build directory**: `WorkSpace/Stm32Demo/build`
+- **OpenOCD script**: `WorkSpace/Stm32Demo/stm32h7.cfg`
+
+```bash
+# Configure STM32H7 demo with toolchain
+cmake -B WorkSpace/Stm32Demo/build -S WorkSpace/Stm32Demo -DCMAKE_TOOLCHAIN_FILE=WorkSpace/Stm32Demo/cmake/starm-clang.cmake
+
+# Build STM32H7 demo
+cmake --build WorkSpace/Stm32Demo/build -j$(nproc)
+```
