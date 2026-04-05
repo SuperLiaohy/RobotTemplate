@@ -42,6 +42,36 @@ public:
                               std::uint32_t timeoutMs) noexcept;
 
     /**
+     * @brief Interrupt-driven transmit.
+     */
+    BspStatus transmitIT(const std::uint8_t* data, std::size_t size) noexcept;
+
+    /**
+     * @brief Interrupt-driven receive.
+     */
+    BspStatus receiveIT(std::uint8_t* data, std::size_t size) noexcept;
+
+    /**
+     * @brief Interrupt-driven full-duplex transfer.
+     */
+    BspStatus transmitReceiveIT(const std::uint8_t* txData, std::uint8_t* rxData, std::size_t size) noexcept;
+
+    /**
+     * @brief DMA-driven transmit.
+     */
+    BspStatus transmitDMA(const std::uint8_t* data, std::size_t size) noexcept;
+
+    /**
+     * @brief DMA-driven receive.
+     */
+    BspStatus receiveDMA(std::uint8_t* data, std::size_t size) noexcept;
+
+    /**
+     * @brief DMA-driven full-duplex transfer.
+     */
+    BspStatus transmitReceiveDMA(const std::uint8_t* txData, std::uint8_t* rxData, std::size_t size) noexcept;
+
+    /**
      * @brief Replace hardware handle used by this abstraction.
      */
     BspStatus setHardwareHandle(void* hardwareHandle) noexcept;

@@ -90,6 +90,12 @@ concept IsSpi = requires(
     { spi.transmit(txData, size, timeoutMs) } -> std::same_as<BspStatus>;
     { spi.receive(rxData, size, timeoutMs) } -> std::same_as<BspStatus>;
     { spi.transmitReceive(txData, rxData, size, timeoutMs) } -> std::same_as<BspStatus>;
+    { spi.transmitIT(txData, size) } -> std::same_as<BspStatus>;
+    { spi.receiveIT(rxData, size) } -> std::same_as<BspStatus>;
+    { spi.transmitReceiveIT(txData, rxData, size) } -> std::same_as<BspStatus>;
+    { spi.transmitDMA(txData, size) } -> std::same_as<BspStatus>;
+    { spi.receiveDMA(rxData, size) } -> std::same_as<BspStatus>;
+    { spi.transmitReceiveDMA(txData, rxData, size) } -> std::same_as<BspStatus>;
 };
 
 template<typename T>

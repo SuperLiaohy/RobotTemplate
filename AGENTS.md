@@ -56,5 +56,5 @@ cd build && ctest -R "AlgorithmTest" -V
 
 1. **Verify Compilation**: Always run `cmake --build build` after generating or modifying `.cpp`/`.hpp` files to ensure zero compilation errors and zero warnings.
 2. **Path Context**: Always use absolute paths starting from the workspace root (`/home/liaohy/User/Code/CLion/RobotTemplate/`).
-3. **PC Testability**: When writing new logic for `algorithm` or `component`, immediately write a corresponding GTest case in the `UserSDK/tests/` directory and verify it passes locally.
+3. **PC Testability: When writing new logic for `algorithm` or `component`, immediately write a corresponding GTest case in the UserSDK/tests/ directory and verify it passes locally. No test cases are required for code in `bsp` and `driver`.
 4. **Hardware Separation**: Never mix MCU-specific register code or vendor HAL inside `algorithm` or `component`. Hardware specifics belong strictly in `bsp` and occasionally `driver`.

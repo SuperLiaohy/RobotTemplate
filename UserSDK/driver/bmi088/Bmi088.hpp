@@ -9,18 +9,28 @@
 
 namespace EP::Driver {
 
-template<IsSpi TSpi, ::IsGpioOut TAccelCs, ::IsGpioOut TGyroCs, ::IsDelay TDelay>
+template<IsSpi TSpi, ::IsGpioOut TAccelCs, ::IsGpioOut TGyroCs, ::IsDelay TDelay, ::IsExti TExti>
 class Bmi088 {
 public:
     static constexpr std::uint8_t bmi088AccelChipId = 0x1EU;
     static constexpr std::uint8_t bmi088GyroChipId = 0x0FU;
 
-    explicit Bmi088(TSpi& spi, TAccelCs& accelCs, TGyroCs& gyroCs) noexcept :
+    explicit Bmi088(
+        TSpi& spi,
+        TAccelCs& accelCs,
+        TGyroCs& gyroCs,
+        TExti* accelExti = nullptr,
+        TExti* gyroExti = nullptr
+    ) noexcept :
         spi_(spi),
         accelCs_(accelCs),
         gyroCs_(gyroCs),
+        accelExti_(accelExti),
+        gyroExti_(gyroExti),
         accelScale_(computeAccelScale(Bmi088AccelRange::g24)),
-        gyroScale_(computeGyroScale(Bmi088GyroRange::dps2000)) {
+        gyroScale_(computeGyroScale(Bmi088GyroRange::dps2000)),
+        accelDrdy_(false),
+        gyroDrdy_(false) {
     }
 
     BspStatus init() noexcept {
@@ -51,6 +61,16 @@ public:
 
         status = writeGyroRegister(regGyroLpm1, gyroPowerNormal);
         if (status != BspStatus::ok) { return status; }
+
+        if (accelExti_ != nullptr) {
+            status = accelExti_->registerCallback(&Bmi088::onAccelDrdyExti, this);
+            if (status != BspStatus::ok) { return status; }
+        }
+
+        if (gyroExti_ != nullptr) {
+            status = gyroExti_->registerCallback(&Bmi088::onGyroDrdyExti, this);
+            if (status != BspStatus::ok) { return status; }
+        }
 
         return BspStatus::ok;
     }
@@ -301,6 +321,20 @@ private:
         return gyroRangeToDps(range) / lsbDenominator;
     }
 
+    static void onAccelDrdyExti(void* userContext) noexcept {
+        if (userContext == nullptr) { return; }
+
+        auto* instance = static_cast<Bmi088*>(userContext);
+        instance->accelDrdy_ = true;
+    }
+
+    static void onGyroDrdyExti(void* userContext) noexcept {
+        if (userContext == nullptr) { return; }
+
+        auto* instance = static_cast<Bmi088*>(userContext);
+        instance->gyroDrdy_ = true;
+    }
+
     BspStatus writeAccelRegister(std::uint8_t reg, std::uint8_t value) noexcept {
         const std::array<std::uint8_t, 2U> txData = {static_cast<std::uint8_t>(reg & static_cast<std::uint8_t>(~regReadMask)), value};
         std::array<std::uint8_t, 2U> rxData{};
@@ -384,8 +418,12 @@ private:
     TSpi& spi_;
     TAccelCs& accelCs_;
     TGyroCs& gyroCs_;
+    TExti* accelExti_;
+    TExti* gyroExti_;
     float accelScale_;
     float gyroScale_;
+    volatile bool accelDrdy_;
+    volatile bool gyroDrdy_;
 };
 
 }
