@@ -38,6 +38,8 @@ Run a strict hardware debug loop for STM32 issues.
      continue
      ```
    - Extend it as needed with breakpoints, logging, and backtrace/register/memory captures.
+   - If you need useful runtime serial logs, avoid scripts that stop at a breakpoint, print values, and immediately `quit`.
+   - Prefer this flow after your breakpoint actions: `continue`, then `detach`, then `quit`, so firmware keeps running and the serial logger can capture post-breakpoint behavior.
 
 4. **Start OpenOCD in background and save PID**
    ```bash
@@ -57,7 +59,7 @@ Run a strict hardware debug loop for STM32 issues.
 6. **Start serial logger in background and save PID**
    ```bash
    python3 -c "import serial" || pip install pyserial
-   python3 tools/serial_logger.py --port "$PORT" --baud 115200 --output "$SESSION_DIR/serial.log" &
+   python3 .opencode/skills/tools/serial_logger.py --port "$PORT" --baud 115200 --output "$SESSION_DIR/serial.log" &
    LOGGER_PID=$!
    ```
    - If `serial_logger.py` fails to start because `serial` is missing, install `pyserial` and run the logger again.
@@ -65,7 +67,10 @@ Run a strict hardware debug loop for STM32 issues.
 7. **Run GDB in foreground with script**
    ```bash
    arm-none-eabi-gdb WorkSpace/Stm32Demo/build/Stm32Demo.elf -x "$SESSION_DIR/debug.gdb" | tee "$SESSION_DIR/gdb_output.log"
+   # If your GDB script detached, sleep here to allow the serial logger to capture runtime output.
+   sleep 5
    ```
+   - Do not end the GDB phase too early when collecting serial evidence. If your script uses breakpoints for inspection, let execution continue and detach first, then sleep in bash before cleanup so logs contain enough runtime context.
 
 8. **CRITICAL cleanup: always kill background processes using saved PIDs**
    ```bash
