@@ -6,6 +6,10 @@ set(BspCommonSources
 set(BspStm32Sources
     ${CMAKE_CURRENT_SOURCE_DIR}/stm32/Uart.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/stm32/USBCDC.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/stm32/Spi.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/stm32/Gpio.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/stm32/Exti.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/stm32/Delay.cpp
 )
 
 set(BspSimulateSources

@@ -21,6 +21,8 @@ enum class UartEvent : std::uint8_t {
  */
 using UartCallback = void(*)(UartEvent event, std::size_t length, void* userContext) noexcept;
 
+using ExtiCallback = void(*)(void* userContext) noexcept;
+
 template<typename T>
 concept IsUart = requires(
     T uart,
@@ -54,4 +56,46 @@ concept IsUsbCdc = requires(
     { cdc.init() } -> std::same_as<BspStatus>;
     { cdc.transmit(txData, size, timeoutMs) } -> std::same_as<BspStatus>;
     { cdc.receive(rxData, size, timeoutMs) } -> std::same_as<BspStatus>;
+};
+
+template<typename T>
+concept IsGpioOut = requires(T gpio) {
+    { gpio.setHigh() } -> std::same_as<BspStatus>;
+    { gpio.setLow() } -> std::same_as<BspStatus>;
+    { gpio.toggle() } -> std::same_as<BspStatus>;
+};
+
+template<typename T>
+concept IsGpioIn = requires(T gpio) {
+    { gpio.read() } -> std::same_as<bool>;
+};
+
+template<typename T>
+concept IsExti = requires(
+    T exti,
+    ExtiCallback callback,
+    void* userContext
+) {
+    { exti.registerCallback(callback, userContext) } -> std::same_as<BspStatus>;
+};
+
+template<typename T>
+concept IsSpi = requires(
+    T spi,
+    const std::uint8_t* txData,
+    std::uint8_t* rxData,
+    std::size_t size,
+    std::uint32_t timeoutMs
+) {
+    { spi.transmit(txData, size, timeoutMs) } -> std::same_as<BspStatus>;
+    { spi.receive(rxData, size, timeoutMs) } -> std::same_as<BspStatus>;
+    { spi.transmitReceive(txData, rxData, size, timeoutMs) } -> std::same_as<BspStatus>;
+};
+
+template<typename T>
+concept IsDelay = requires(
+    T delay,
+    std::uint32_t timeoutMs
+) {
+    { delay.delayMs(timeoutMs) } -> std::same_as<void>;
 };
