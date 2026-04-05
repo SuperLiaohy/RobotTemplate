@@ -84,9 +84,19 @@ Run a strict hardware debug loop for STM32 issues.
    - Inspect `$SESSION_DIR/gdb_output.log` (and `$SESSION_DIR/openocd.log` if needed).
 
 10. **Analyze and iterate**
-   - Determine root cause from logs/output.
-   - Modify code based on findings.
-   - Repeat this full cycle until the issue is fixed.
+    - Determine root cause from logs/output.
+    - Modify code based on findings.
+    - Repeat this full cycle until the issue is fixed.
+
+11. **Generate a summary report**
+    - Read the collected logs from `$SESSION_DIR/serial.log`, `$SESSION_DIR/gdb_output.log`, and `$SESSION_DIR/openocd.log`.
+    - Create a markdown report at `$SESSION_DIR/debug_report.md`.
+    - Include these sections in the report:
+      - `## Test Overview`
+      - `## GDB Data Analysis` (values extracted)
+      - `## Serial Logging Observations`
+      - `## Root Cause / Conclusion`
+    - Keep this report updated on each iteration so every debug session has a clear trace of evidence and conclusions.
 
 ## Non-negotiables
 
