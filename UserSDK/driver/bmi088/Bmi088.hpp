@@ -1,99 +1,13 @@
 #pragma once
 
 #include "../../bsp/BspConcepts.hpp"
+#include "Bmi088Reg.hpp"
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <concepts>
 
 namespace EP::Driver {
-
-enum class Bmi088AccelRange : std::uint8_t {
-    g3 = 0x00U,
-    g6 = 0x01U,
-    g12 = 0x02U,
-    g24 = 0x03U
-};
-
-enum class Bmi088AccelBandwidth : std::uint8_t {
-    osr4 = 0x00U,
-    osr2 = 0x01U,
-    normal = 0x02U
-};
-
-enum class Bmi088AccelOdr : std::uint8_t {
-    hz12_5 = 0x05U,
-    hz25 = 0x06U,
-    hz50 = 0x07U,
-    hz100 = 0x08U,
-    hz200 = 0x09U,
-    hz400 = 0x0AU,
-    hz800 = 0x0BU,
-    hz1600 = 0x0CU
-};
-
-enum class Bmi088GyroRange : std::uint8_t {
-    dps2000 = 0x00U,
-    dps1000 = 0x01U,
-    dps500 = 0x02U,
-    dps250 = 0x03U,
-    dps125 = 0x04U
-};
-
-enum class Bmi088GyroBandwidth : std::uint8_t {
-    odr2000_bw532 = 0x00U,
-    odr2000_bw230 = 0x01U,
-    odr1000_bw116 = 0x02U,
-    odr400_bw47 = 0x03U,
-    odr200_bw23 = 0x04U,
-    odr100_bw12 = 0x05U,
-    odr200_bw64 = 0x06U,
-    odr100_bw32 = 0x07U
-};
-
-enum class Bmi088IntActiveLevel : std::uint8_t {
-    activeLow = 0U,
-    activeHigh = 1U
-};
-
-enum class Bmi088IntOutputMode : std::uint8_t {
-    pushPull = 0U,
-    openDrain = 1U
-};
-
-enum class Bmi088AccelDrdyRoute : std::uint8_t {
-    int1 = 0U,
-    int2 = 1U
-};
-
-enum class Bmi088GyroDrdyRoute : std::uint8_t {
-    int3 = 0U,
-    int4 = 1U
-};
-
-struct Bmi088AccelConfig {
-    Bmi088AccelOdr odr{Bmi088AccelOdr::hz200};
-    Bmi088AccelBandwidth bandwidth{Bmi088AccelBandwidth::normal};
-    Bmi088AccelRange range{Bmi088AccelRange::g24};
-};
-
-struct Bmi088GyroConfig {
-    Bmi088GyroBandwidth bandwidth{Bmi088GyroBandwidth::odr200_bw23};
-    Bmi088GyroRange range{Bmi088GyroRange::dps2000};
-};
-
-struct Bmi088Raw3Axis {
-    std::int16_t x{0};
-    std::int16_t y{0};
-    std::int16_t z{0};
-};
-
-struct Bmi088Data {
-    float x{0.0F};
-    float y{0.0F};
-    float z{0.0F};
-};
 
 template<IsSpi TSpi, ::IsGpioOut TAccelCs, ::IsGpioOut TGyroCs, ::IsDelay TDelay>
 class Bmi088 {
@@ -101,13 +15,10 @@ public:
     static constexpr std::uint8_t bmi088AccelChipId = 0x1EU;
     static constexpr std::uint8_t bmi088GyroChipId = 0x0FU;
 
-    explicit Bmi088(TSpi& spi, TAccelCs& accelCs, TGyroCs& gyroCs, TDelay& delay) noexcept :
+    explicit Bmi088(TSpi& spi, TAccelCs& accelCs, TGyroCs& gyroCs) noexcept :
         spi_(spi),
         accelCs_(accelCs),
         gyroCs_(gyroCs),
-        delay_(delay),
-        accelRange_(Bmi088AccelRange::g24),
-        gyroRange_(Bmi088GyroRange::dps2000),
         accelScale_(computeAccelScale(Bmi088AccelRange::g24)),
         gyroScale_(computeGyroScale(Bmi088GyroRange::dps2000)) {
     }
@@ -124,19 +35,19 @@ public:
 
         status = writeAccelRegister(regAccelSoftReset, softResetCmd);
         if (status != BspStatus::ok) { return status; }
-        delay_.delayMs(accelResetDelayMs);
+        delayMs(accelResetDelayMs);
 
         status = writeAccelRegister(regAccelPwrConf, accelPwrConfActive);
         if (status != BspStatus::ok) { return status; }
-        delay_.delayMs(accelPwrConfDelayMs);
+        delayMs(accelPwrConfDelayMs);
 
         status = writeAccelRegister(regAccelPwrCtrl, accelPowerEnable);
         if (status != BspStatus::ok) { return status; }
-        delay_.delayMs(accelPowerOnDelayMs);
+        delayMs(accelPowerOnDelayMs);
 
         status = writeGyroRegister(regGyroSoftReset, softResetCmd);
         if (status != BspStatus::ok) { return status; }
-        delay_.delayMs(gyroResetDelayMs);
+        delayMs(gyroResetDelayMs);
 
         status = writeGyroRegister(regGyroLpm1, gyroPowerNormal);
         if (status != BspStatus::ok) { return status; }
@@ -155,8 +66,7 @@ public:
         status = writeAccelRegister(regAccelRange, static_cast<std::uint8_t>(config.range));
         if (status != BspStatus::ok) { return status; }
 
-        accelRange_ = config.range;
-        accelScale_ = computeAccelScale(accelRange_);
+        accelScale_ = computeAccelScale(config.range);
         return BspStatus::ok;
     }
 
@@ -167,8 +77,7 @@ public:
         status = writeGyroRegister(regGyroRange, static_cast<std::uint8_t>(config.range));
         if (status != BspStatus::ok) { return status; }
 
-        gyroRange_ = config.range;
-        gyroScale_ = computeGyroScale(gyroRange_);
+        gyroScale_ = computeGyroScale(config.range);
         return BspStatus::ok;
     }
 
@@ -468,12 +377,13 @@ private:
         return transferStatus;
     }
 
+    void delayMs(std::uint32_t timeoutMs) noexcept {
+        TDelay::halDelayMs(timeoutMs);
+    }
+
     TSpi& spi_;
     TAccelCs& accelCs_;
     TGyroCs& gyroCs_;
-    TDelay& delay_;
-    Bmi088AccelRange accelRange_;
-    Bmi088GyroRange gyroRange_;
     float accelScale_;
     float gyroScale_;
 };

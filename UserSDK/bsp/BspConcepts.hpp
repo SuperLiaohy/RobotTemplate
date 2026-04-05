@@ -94,8 +94,9 @@ concept IsSpi = requires(
 
 template<typename T>
 concept IsDelay = requires(
-    T delay,
     std::uint32_t timeoutMs
 ) {
-    { delay.delayMs(timeoutMs) } -> std::same_as<void>;
+    { T::halDelayMs(timeoutMs) } -> std::same_as<void>;
+    { T::osDelayMs(timeoutMs) } -> std::same_as<void>;
+    { T::delayUs(timeoutMs) } -> std::same_as<void>;
 };

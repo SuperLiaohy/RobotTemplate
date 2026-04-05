@@ -25,7 +25,7 @@ BspStatus USBCDC::transmit(const std::uint8_t* data, std::size_t size, std::uint
 #endif
 
     std::uint32_t remaining = timeoutMs;
-    while (CDC_Transmit_FS(const_cast<std::uint8_t*>(data), static_cast<std::uint16_t>(size)) == USBD_BUSY) {
+    while (CDC_Transmit_HS(const_cast<std::uint8_t*>(data), static_cast<std::uint16_t>(size)) == USBD_BUSY) {
         if (remaining == 0U) {
             return BspStatus::timeout;
         }
