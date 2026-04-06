@@ -1,0 +1,3 @@
+[submodule "WorkSpace/Stm32Demo"]
+	path = WorkSpace/Stm32Demo
+	url = https://github.com/SuperLiaohy/Stm32Demo.git

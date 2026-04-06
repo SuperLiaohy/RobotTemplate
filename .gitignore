@@ -1,2 +1,5 @@
 .idea
+.cache
 build
+.sisyphus
+debug_sessions

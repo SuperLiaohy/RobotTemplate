@@ -298,16 +298,18 @@ struct fmtter<uint64_t> {
 };
 
 template<std::size_t count>
-struct fmtter<const char (&)[count]> {
+struct fmtter<char[count]> {
     __always_inline static void execute(char*& buf, const char (&value)[count], const Feature& feature) {
-        memcpy(buf, value, count);
+        memcpy(buf, value, count - 1); 
+        buf += count - 1;
     }
 };
 
 template<std::size_t count>
-struct fmtter<const uint8_t (&)[count]> {
+struct fmtter<uint8_t[count]> {
     __always_inline static void execute(char*& buf, const uint8_t (&value)[count], const Feature& feature) {
-        memcpy(buf, value, count);
+        memcpy(buf, value, count - 1);
+        buf += count;
     }
 };
 
