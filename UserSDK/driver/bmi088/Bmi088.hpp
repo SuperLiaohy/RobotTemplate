@@ -34,10 +34,7 @@ public:
     }
 
     BspStatus init() noexcept {
-        BspStatus status = spi_.init();
-        if (status != BspStatus::ok) { return status; }
-
-        status = accelCs_.setHigh();
+        BspStatus status = accelCs_.setHigh();
         if (status != BspStatus::ok) { return status; }
 
         status = gyroCs_.setHigh();
