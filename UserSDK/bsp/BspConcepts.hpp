@@ -15,11 +15,16 @@ enum class UartEvent : std::uint8_t {
     rxIdle,
     error
 };
+enum class CDCEvent : std::uint8_t {
+    rxComplete = 0U,
+};
 
 /**
  * @brief UART callback signature.
  */
 using UartCallback = void(*)(UartEvent event, std::size_t length, void* userContext) noexcept;
+
+using CDCCallback = void(*)(CDCEvent event, std::size_t length, void* userContext) noexcept;
 
 using ExtiCallback = void(*)(void* userContext) noexcept;
 

@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "BspConcepts.hpp"
+
 /**
  * @brief USB CDC BSP abstraction with an opaque hardware handle.
  */
@@ -13,7 +15,7 @@ public:
     /**
      * @brief Construct USB CDC wrapper around a platform handle.
      */
-    explicit USBCDC(void* hardwareHandle = nullptr) noexcept;
+    explicit USBCDC() noexcept;
     USBCDC(const USBCDC&) = delete;
     USBCDC& operator=(const USBCDC&) = delete;
     USBCDC(USBCDC&&) = delete;
@@ -27,18 +29,20 @@ public:
     /**
      * @brief Blocking transmit over USB CDC.
      */
-    BspStatus transmit(const std::uint8_t* data, std::size_t size, std::uint32_t timeoutMs) noexcept;
+    BspStatus transmit(const std::uint8_t* data, std::size_t size) noexcept;
 
     /**
      * @brief Blocking receive over USB CDC.
      */
-    BspStatus receive(std::uint8_t* data, std::size_t size, std::uint32_t timeoutMs) noexcept;
+    BspStatus registerCallback(CDCCallback callback, void* userContext) noexcept;
 
-    /**
-     * @brief Replace hardware handle used by this abstraction.
-     */
-    BspStatus setHardwareHandle(void* hardwareHandle) noexcept;
-
-private:
-    void* hardwareHandle_;
+    CDCCallback callback_;
+    void* callbackUserContext_;
 };
+
+
+USBCDC& CDCInstance();
+
+inline void CDCPrint(std::uint8_t* data, std::size_t len) noexcept {
+    CDCInstance().transmit(data, len);
+}
