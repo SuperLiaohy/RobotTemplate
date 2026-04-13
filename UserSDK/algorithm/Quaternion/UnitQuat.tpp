@@ -81,8 +81,20 @@ inline Matrix<3, 3, UnitQuat::pl> UnitQuat::rotMatrix() const {
 }
 template<RotAngle T>
 std::optional<std::array<float, 3>> UnitQuat::rotAngle() const {
-    auto R = this->rotMatrix();
+    UnitQuat q = *this;
+    q.normalized();
+    if (q.w < 0.0f) {
+        q = UnitQuat{-q.w, -q.u[0], -q.u[1], -q.u[2]};
+    }
+
+    auto R = q.rotMatrix();
     float theta1 = 0, theta2 = 0, theta3 = 0;
+
+    auto clampUnit = [](float v) {
+        if (v > 1.0f) { return 1.0f; }
+        if (v < -1.0f) { return -1.0f; }
+        return v;
+    };
 
     // Equivalency mapping: FIXED_ABC == EULER_CBA
     constexpr RotAngle seq = 
@@ -103,48 +115,54 @@ std::optional<std::array<float, 3>> UnitQuat::rotAngle() const {
     auto isSingular = [](float val) { return std::abs(std::abs(val) - 1.0f) < 1e-5f; };
 
     if constexpr (seq == RotAngle::EULER_ZYX) { // z->y->x (Yaw, Pitch, Roll)
-        theta2 = pl::asin(-R(2, 0));
-        if (!isSingular(R(2, 0))) {
+        const float r20 = clampUnit(R(2, 0));
+        theta2 = pl::asin(-r20);
+        if (!isSingular(r20)) {
             theta1 = pl::atan2(R(1, 0), R(0, 0));
             theta3 = pl::atan2(R(2, 1), R(2, 2));
         } else {
             return std::nullopt;
         }
     } else if constexpr (seq == RotAngle::EULER_XYZ) { // x->y->z
-        theta2 = pl::asin(R(0, 2));
-        if (!isSingular(R(0, 2))) {
+        const float r02 = clampUnit(R(0, 2));
+        theta2 = pl::asin(r02);
+        if (!isSingular(r02)) {
             theta1 = pl::atan2(-R(1, 2), R(2, 2));
             theta3 = pl::atan2(-R(0, 1), R(0, 0));
         } else {
             return std::nullopt;
         }
     } else if constexpr (seq == RotAngle::EULER_YXZ) { // y->x->z
-        theta2 = pl::asin(-R(1, 2));
-        if (!isSingular(R(1, 2))) {
+        const float r12 = clampUnit(R(1, 2));
+        theta2 = pl::asin(-r12);
+        if (!isSingular(r12)) {
             theta1 = pl::atan2(R(0, 2), R(2, 2));
             theta3 = pl::atan2(R(1, 0), R(1, 1));
         } else {
             return std::nullopt;
         }
     } else if constexpr (seq == RotAngle::EULER_YZX) { // y->z->x
-        theta2 = pl::asin(R(1, 0));
-        if (!isSingular(R(1, 0))) {
+        const float r10 = clampUnit(R(1, 0));
+        theta2 = pl::asin(r10);
+        if (!isSingular(r10)) {
             theta1 = pl::atan2(-R(2, 0), R(0, 0));
             theta3 = pl::atan2(-R(1, 2), R(1, 1));
         } else {
             return std::nullopt;
         }
     } else if constexpr (seq == RotAngle::EULER_ZXY) { // z->x->y
-        theta2 = pl::asin(R(2, 1));
-        if (!isSingular(R(2, 1))) {
+        const float r21 = clampUnit(R(2, 1));
+        theta2 = pl::asin(r21);
+        if (!isSingular(r21)) {
             theta1 = pl::atan2(-R(0, 1), R(1, 1));
             theta3 = pl::atan2(-R(2, 0), R(2, 2));
         } else {
             return std::nullopt;
         }
     } else if constexpr (seq == RotAngle::EULER_XZY) { // x->z->y
-        theta2 = pl::asin(-R(0, 1));
-        if (!isSingular(R(0, 1))) {
+        const float r01 = clampUnit(R(0, 1));
+        theta2 = pl::asin(-r01);
+        if (!isSingular(r01)) {
             theta1 = pl::atan2(R(2, 1), R(1, 1));
             theta3 = pl::atan2(R(0, 2), R(0, 0));
         } else {
@@ -153,48 +171,54 @@ std::optional<std::array<float, 3>> UnitQuat::rotAngle() const {
     } 
     // --- Proper Euler Angles ---
     else if constexpr (seq == RotAngle::EULER_ZYZ) { // z->y->z
-        theta2 = pl::acos(R(2, 2));
-        if (!isSingular(R(2, 2))) {
+        const float r22 = clampUnit(R(2, 2));
+        theta2 = pl::acos(r22);
+        if (!isSingular(r22)) {
             theta1 = pl::atan2(R(1, 2), R(0, 2));
             theta3 = pl::atan2(R(2, 1), -R(2, 0));
         } else {
             return std::nullopt;
         }
     } else if constexpr (seq == RotAngle::EULER_ZXZ) { // z->x->z
-        theta2 = pl::acos(R(2, 2));
-        if (!isSingular(R(2, 2))) {
+        const float r22 = clampUnit(R(2, 2));
+        theta2 = pl::acos(r22);
+        if (!isSingular(r22)) {
             theta1 = pl::atan2(R(0, 2), -R(1, 2));
             theta3 = pl::atan2(R(2, 0), R(2, 1));
         } else {
             return std::nullopt;
         }
     } else if constexpr (seq == RotAngle::EULER_YXY) { // y->x->y
-        theta2 = pl::acos(R(1, 1));
-        if (!isSingular(R(1, 1))) {
+        const float r11 = clampUnit(R(1, 1));
+        theta2 = pl::acos(r11);
+        if (!isSingular(r11)) {
             theta1 = pl::atan2(R(0, 1), R(2, 1));
             theta3 = pl::atan2(R(1, 0), -R(1, 2));
         } else {
             return std::nullopt;
         }
     } else if constexpr (seq == RotAngle::EULER_YZY) { // y->z->y
-        theta2 = pl::acos(R(1, 1));
-        if (!isSingular(R(1, 1))) {
+        const float r11 = clampUnit(R(1, 1));
+        theta2 = pl::acos(r11);
+        if (!isSingular(r11)) {
             theta1 = pl::atan2(R(2, 1), -R(0, 1));
             theta3 = pl::atan2(R(1, 2), R(1, 0));
         } else {
             return std::nullopt;
         }
     } else if constexpr (seq == RotAngle::EULER_XYX) { // x->y->x
-        theta2 = pl::acos(R(0, 0));
-        if (!isSingular(R(0, 0))) {
+        const float r00 = clampUnit(R(0, 0));
+        theta2 = pl::acos(r00);
+        if (!isSingular(r00)) {
             theta1 = pl::atan2(R(1, 0), -R(2, 0));
             theta3 = pl::atan2(R(0, 1), R(0, 2));
         } else {
             return std::nullopt;
         }
     } else if constexpr (seq == RotAngle::EULER_XZX) { // x->z->x
-        theta2 = pl::acos(R(0, 0));
-        if (!isSingular(R(0, 0))) {
+        const float r00 = clampUnit(R(0, 0));
+        theta2 = pl::acos(r00);
+        if (!isSingular(r00)) {
             theta1 = pl::atan2(R(2, 0), R(1, 0));
             theta3 = pl::atan2(R(0, 2), -R(0, 1));
         } else {

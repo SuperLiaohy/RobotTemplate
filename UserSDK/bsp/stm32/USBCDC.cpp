@@ -6,6 +6,7 @@ extern "C" {
 #include <usbd_cdc_if.h>
 }
 
+namespace EP::Bsp::Stm32 {
 USBCDC::USBCDC() noexcept {}
 
 BspStatus USBCDC::init() noexcept {
@@ -33,6 +34,7 @@ extern "C" void pCDCCallback(uint32_t len,void *userContext) {
     if (CDCInstance().callback_ != nullptr) {
         CDCInstance().callback_(CDCEvent::rxComplete,len,userContext);
     }
+}
 }
 
 #endif

@@ -7,6 +7,7 @@
 
 #include "BspConcepts.hpp"
 
+namespace EP::Bsp::Stm32 {
 /**
  * @brief USB CDC BSP abstraction with an opaque hardware handle.
  */
@@ -45,4 +46,5 @@ USBCDC& CDCInstance();
 
 inline void CDCPrint(std::uint8_t* data, std::size_t len) noexcept {
     CDCInstance().transmit(data, len);
+}
 }

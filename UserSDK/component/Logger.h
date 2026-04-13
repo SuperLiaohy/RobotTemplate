@@ -7,9 +7,9 @@
 #include <Format.h>
 
 namespace EP::Component {
-template<auto print>
+template<auto print, std::size_t bufLen = 1024>
 class Logger {
-    char buffer[1024];
+    char buffer[bufLen];
     std::size_t mLen = 0;
 
 public:

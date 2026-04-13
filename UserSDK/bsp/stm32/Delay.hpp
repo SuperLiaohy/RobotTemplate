@@ -1,21 +1,21 @@
 #pragma once
 
+#include <cstdint>
+
 #ifdef USE_HAL_DRIVER
 extern "C" {
 #include "cmsis_os2.h"
+
 // #include "cmsis_os.h"
 void HAL_Delay(uint32_t Delay);
 }
 #endif
 
-
-
-
-
+namespace EP::Bsp::Stm32 {
 class Delay {
 public:
     static void osDelayMs(std::uint32_t timeoutMs) noexcept {
-        osDelay(timeoutMs * kUsPerMs);
+        osDelay(timeoutMs);
     }
 
     static void halDelayMs(std::uint32_t timeoutMs) noexcept {
@@ -32,3 +32,4 @@ private:
     static void busyWaitUs(std::uint32_t timeoutUs) noexcept {
     }
 };
+}
