@@ -6,6 +6,8 @@
 #include <cstddef>
 #include <cstdint>
 
+namespace EP::Bsp::Stm32 {
+
 /**
  * @brief UART BSP abstraction with opaque hardware handle.
  */
@@ -88,3 +90,5 @@ private:
     UartCallback callback_;
     void* callbackUserContext_;
 };
+
+}

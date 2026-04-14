@@ -121,3 +121,26 @@ TEST(UnitQuatEulerTest, SingularityCheck) {
     // When gimbal lock occurs, we expect nullopt
     EXPECT_FALSE(angles.has_value());
 }
+
+TEST(UnitQuatEulerTest, QuaternionSignInvariance) {
+    const float axisArr[3] = {0.3f, -0.4f, 0.5f};
+    ColVec<3> axis(axisArr);
+    axis = axis.normalized();
+    const float theta = 0.9f;
+
+    const float w = std::cos(theta * 0.5f);
+    const float s = std::sin(theta * 0.5f);
+
+    UnitQuat q(theta, axis);
+    UnitQuat qNeg(-w, -axis[0] * s, -axis[1] * s, -axis[2] * s);
+
+    auto anglesQ = q.rotAngle<RotAngle::FIXED_XYZ>();
+    auto anglesQNeg = qNeg.rotAngle<RotAngle::FIXED_XYZ>();
+
+    ASSERT_TRUE(anglesQ.has_value());
+    ASSERT_TRUE(anglesQNeg.has_value());
+
+    EXPECT_NEAR((*anglesQNeg)[0], (*anglesQ)[0], 1e-4);
+    EXPECT_NEAR((*anglesQNeg)[1], (*anglesQ)[1], 1e-4);
+    EXPECT_NEAR((*anglesQNeg)[2], (*anglesQ)[2], 1e-4);
+}

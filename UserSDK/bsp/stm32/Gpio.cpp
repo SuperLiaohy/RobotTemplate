@@ -6,6 +6,8 @@ extern "C" {
 #include <gpio.h>
 }
 
+namespace EP::Bsp::Stm32 {
+
 namespace {
 GPIO_TypeDef* toHalPort(void* rawPortHandle) noexcept {
     return static_cast<GPIO_TypeDef*>(rawPortHandle);
@@ -69,6 +71,8 @@ BspStatus Gpio::setHardwareHandle(void* portHandle, std::uint16_t pinMask) noexc
 
 std::uint16_t Gpio::pinMask() const noexcept {
     return pinMask_;
+}
+
 }
 
 #endif

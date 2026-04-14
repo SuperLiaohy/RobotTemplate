@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <cstdint>
 
+namespace EP::Bsp::Stm32 {
+
 /**
  * @brief SPI BSP abstraction with opaque hardware handle.
  */
@@ -79,3 +81,5 @@ public:
 private:
     void* hardwareHandle_;
 };
+
+}

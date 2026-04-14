@@ -6,50 +6,35 @@ extern "C" {
 #include <usbd_cdc_if.h>
 }
 
-USBCDC::USBCDC(void* hardwareHandle) noexcept : hardwareHandle_(hardwareHandle) {}
+namespace EP::Bsp::Stm32 {
+USBCDC::USBCDC() noexcept {}
 
 BspStatus USBCDC::init() noexcept {
-#ifndef NDEBUG
-    if (hardwareHandle_ == nullptr) {
-        return BspStatus::invalidArgument;
-    }
-#endif
     return BspStatus::ok;
 }
 
-BspStatus USBCDC::transmit(const std::uint8_t* data, std::size_t size, std::uint32_t timeoutMs) noexcept {
-#ifndef NDEBUG
-    if (hardwareHandle_ == nullptr || data == nullptr || size == 0U || size > 0xFFFFU) {
-        return BspStatus::invalidArgument;
-    }
-#endif
-
-    std::uint32_t remaining = timeoutMs;
-    while (CDC_Transmit_HS(const_cast<std::uint8_t*>(data), static_cast<std::uint16_t>(size)) == USBD_BUSY) {
-        if (remaining == 0U) {
-            return BspStatus::timeout;
-        }
-        --remaining;
+BspStatus USBCDC::transmit(const std::uint8_t* data, std::size_t size) noexcept {
+    if (CDC_Transmit_HS(const_cast<std::uint8_t*>(data), static_cast<std::uint16_t>(size)) == USBD_BUSY) {
+        return BspStatus::timeout;
     }
     return BspStatus::ok;
 }
 
-BspStatus USBCDC::receive(std::uint8_t* data, std::size_t size, std::uint32_t) noexcept {
-#ifndef NDEBUG
-    if (hardwareHandle_ == nullptr || data == nullptr || size == 0U) {
-        return BspStatus::invalidArgument;
-    }
-#endif
-    return BspStatus::unsupported;
+BspStatus USBCDC::registerCallback(CDCCallback callback, void *userContext) noexcept {
+    callback_ = callback;
+    callbackUserContext_ = userContext;
 }
 
-BspStatus USBCDC::setHardwareHandle(void* hardwareHandle) noexcept {
-    hardwareHandle_ = hardwareHandle;
-#ifndef NDEBUG
-    return hardwareHandle_ == nullptr ? BspStatus::invalidArgument : BspStatus::ok;
-#else
-    return BspStatus::ok;
-#endif
+USBCDC & CDCInstance() {
+    static USBCDC usbCDC;
+    return usbCDC;
+}
+
+extern "C" void pCDCCallback(uint32_t len,void *userContext) {
+    if (CDCInstance().callback_ != nullptr) {
+        CDCInstance().callback_(CDCEvent::rxComplete,len,userContext);
+    }
+}
 }
 
 #endif
