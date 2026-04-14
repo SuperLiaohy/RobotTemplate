@@ -8,6 +8,8 @@ extern "C" {
 
 #include <array>
 
+namespace EP::Bsp::Stm32 {
+
 namespace {
 constexpr std::size_t kMaxRegisteredUarts = 8U;
 
@@ -223,6 +225,8 @@ extern "C" void HAL_UART_ErrorCallback(UART_HandleTypeDef* huart) {
     if (instance != nullptr) {
         instance->dispatchEvent(UartEvent::error, 0U);
     }
+}
+
 }
 
 #endif

@@ -6,6 +6,8 @@ extern "C" {
 #include <spi.h>
 }
 
+namespace EP::Bsp::Stm32 {
+
 namespace {
 SPI_HandleTypeDef* toHalHandle(void* rawHandle) noexcept {
     return static_cast<SPI_HandleTypeDef*>(rawHandle);
@@ -142,6 +144,8 @@ BspStatus Spi::setHardwareHandle(void* hardwareHandle) noexcept {
 #else
     return BspStatus::ok;
 #endif
+}
+
 }
 
 #endif

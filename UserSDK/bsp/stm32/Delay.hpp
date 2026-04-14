@@ -1,15 +1,15 @@
 #pragma once
 
 #include <cstdint>
+#include "Timestamp.hpp"
 
-#ifdef USE_HAL_DRIVER
 extern "C" {
+#if __has_include("cmsis_os2.h")
 #include "cmsis_os2.h"
-
-// #include "cmsis_os.h"
-void HAL_Delay(uint32_t Delay);
-}
+#else
+void osDelay(uint32_t timeoutMs);
 #endif
+}
 
 namespace EP::Bsp::Stm32 {
 class Delay {
@@ -19,7 +19,7 @@ public:
     }
 
     static void halDelayMs(std::uint32_t timeoutMs) noexcept {
-        HAL_Delay(timeoutMs);
+        delayUs(timeoutMs * kUsPerMs);
     }
 
     static void delayUs(std::uint32_t timeoutUs) noexcept {
@@ -30,6 +30,9 @@ private:
     static constexpr std::uint32_t kUsPerMs = 1000U;
 
     static void busyWaitUs(std::uint32_t timeoutUs) noexcept {
+        const auto start = SysTickCLK::Timestamp::now();
+        while ((SysTickCLK::Timestamp::now() - start).totalMicroseconds() < timeoutUs) {
+        }
     }
 };
 }

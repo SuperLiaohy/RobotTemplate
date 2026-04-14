@@ -4,6 +4,8 @@
 
 #include <cstdint>
 
+namespace EP::Bsp::Stm32 {
+
 /**
  * @brief GPIO BSP abstraction for input and output operations.
  */
@@ -55,3 +57,5 @@ private:
     void* portHandle_;
     std::uint16_t pinMask_;
 };
+
+}

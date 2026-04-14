@@ -4,6 +4,8 @@
 
 #include <array>
 
+namespace EP::Bsp::Stm32 {
+
 namespace {
 constexpr std::size_t kMaxRegisteredExti = 16U;
 
@@ -84,6 +86,8 @@ void Exti::dispatch(std::uint16_t pinMask) noexcept {
 
 extern "C" void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     Exti::dispatch(GPIO_Pin);
+}
+
 }
 
 #endif

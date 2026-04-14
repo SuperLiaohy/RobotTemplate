@@ -5,6 +5,8 @@
 
 #include <cstdint>
 
+namespace EP::Bsp::Stm32 {
+
 /**
  * @brief EXTI BSP abstraction with callback dispatch by GPIO pin.
  */
@@ -45,3 +47,5 @@ private:
     ExtiCallback callback_;
     void* callbackUserContext_;
 };
+
+}
